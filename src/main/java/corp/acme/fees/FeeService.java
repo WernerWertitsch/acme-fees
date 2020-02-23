@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -39,12 +40,13 @@ public class FeeService {
 
     /* THIS SHOULD BE IN SOME KIND OF DATABASE, THIS ONE MIGHT BE A RELATIONAL ONE */
 
-    Map<Category, Map<BigDecimal, Double>> mapped = new HashMap<>();
+    Map<String, Map<BigDecimal, Double>> mapped = new HashMap<>();
     List<Fee> all = new ArrayList<>();
 
 
-    public Double getFeeForCategoryAndValue(Category category, BigDecimal value) {
-        Map<BigDecimal, Double> map = this.mapped.get(category);
+
+    public Double getFeeForCategoryAndValue(String categoryId, BigDecimal value) {
+        Map<BigDecimal, Double> map = this.mapped.get(categoryId);
         BigDecimal key = Arrays.asList(map.keySet().toArray(new BigDecimal[0]))
                 .stream().filter(v -> v.compareTo(value) <= 0).findFirst().get();
         return map.get(key != null ? key : new BigDecimal(0));
@@ -64,19 +66,43 @@ public class FeeService {
     }
 
 
+    private Category fetchCategory(String name){
+        this.discoveryClient.getServices().forEach(s -> logger.info(String.format("Found Service %s", s)));
+        URI uri = this.discoveryClient.getInstances("REGULATORY").get(0).getUri();
+        // Hm, do I really have to do this manually?
+        WebClient.RequestHeadersSpec call = ServiceCall.buildDefaultCall(uri, "byName", name);
+        //omg, blocking, but this is just at startup
+        logger.info(call.toString());
+        return call.retrieve().toEntity(Category.class).block().getBody();
+    }
+
+
     /* Stateful oldskool import */
     private void importFromFile() throws IOException {
+        Category generic = new Category();
+        generic.setDescription("No match was found for product, this is the generic rate");
+        generic.setId("0");
+        generic.setName("Generic");
         try {
             final Integer counter = new Integer(0);
             Arrays.asList(Util.asString(resourceFile).split("\r\n")).stream().map(l ->
                     l.split(";")
             ).collect(Collectors.toList()).forEach(line -> {
                 Fee fee = new Fee();
-                fee.setCategory(fetchCategory(line[0]));
-                fee.setCeiling(line[2].equals("unlimited") ? new BigDecimal(0) : BigDecimal.valueOf(Long.parseLong(line[2].trim())));
-                fee.setFeePrct(Double.valueOf(Double.parseDouble(line[3].replaceAll("%", ""))));
+                fee.setCategory(line[0].toLowerCase().equals("generic") ? generic : fetchCategory(line[0]));
+                fee.setCeiling(line[2].equals("unlimited") ?
+                        new BigDecimal(0) :
+                        BigDecimal.valueOf(Long.parseLong(line[2].trim()
+                                .replaceAll(" ", "")
+                                .replaceAll(",", ".")
+                )));
+                fee.setFeePrct(Double.valueOf(Double.parseDouble(line[3]
+                                .replaceAll("%", "")
+                                .replaceAll(",", ".")
+                )));
                 addMapped(fee);
                 all.add(fee);
+                logger.info("Added "+fee);
             });
 
         } catch (Exception e) {
@@ -88,26 +114,13 @@ public class FeeService {
     }
 
     private void addMapped(Fee fee) {
-        Map<BigDecimal, Double> map = this.mapped.get(fee.getCategory());
+        Map<BigDecimal, Double> map = this.mapped.get(fee.getCategory().getId());
         if(map == null) {
             map = new HashMap<>();
-            this.mapped.put(fee.getCategory(), map);
+            this.mapped.put(fee.getCategory().getId(), map);
         }
         map.put(fee.getCeiling(), fee.getFeePrct());
     }
 
-
-    private Category fetchCategory(String name){
-            this.discoveryClient.getServices().forEach(s -> logger.info(String.format("Found Service %s", s)));
-            URI uri = this.discoveryClient.getInstances("REGULATORY").get(0).getUri();
-            // Hm, do I really have to do this manually?
-            WebClient.RequestHeadersSpec call = ServiceCall.buildDefaultCall(uri, "byName", name);
-            //omg, blocking, but this is just at startup
-            logger.info(call.toString());
-            return call.retrieve().toEntity(Category.class).block().getBody();
-        }
-
-    }
-
-
+}
 
