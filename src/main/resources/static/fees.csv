@@ -1,0 +1,13 @@
+Toxic;0;49 999;0,15%
+Toxic;50 000;74 999;0,20%
+Toxic;75 000;unlimited;0,22%
+Hazardous;0;14 999;0,45%
+Hazardous;15 000;59 999;0,68%
+Hazardous;60 000;unlimited;0,90%
+Reactive;0;19 999;0,50%
+Reactive;20 000;39 999;0,75%
+Reactive;40 000;unlimited;1,12%
+Explosive;0;499 999;0,80%
+Explosive;500 000;749 999;1,05%
+Explosive;750 000;unlimited;1,70%
+Generic;0;unlimited;3,00%
