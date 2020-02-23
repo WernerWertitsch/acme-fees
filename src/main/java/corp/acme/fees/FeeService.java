@@ -12,6 +12,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -24,6 +25,9 @@ import java.util.stream.Collectors;
  */
 @Service
 public class FeeService {
+
+    public static final long WAIT_BEFORE_INITIALIZING = 300;
+
 
     Logger logger = Logger.getLogger("FeeService");
 
@@ -44,6 +48,19 @@ public class FeeService {
         BigDecimal key = Arrays.asList(map.keySet().toArray(new BigDecimal[0]))
                 .stream().filter(v -> v.compareTo(value) <= 0).findFirst().get();
         return map.get(key != null ? key : new BigDecimal(0));
+    }
+
+
+
+    @PostConstruct
+    private void init() throws IOException {
+        // I know.. :(, but need to wait for discovery and catgoeries, these would be separate micro services
+        try {
+            Thread.sleep(WAIT_BEFORE_INITIALIZING );
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        this.importFromFile();
     }
 
 
