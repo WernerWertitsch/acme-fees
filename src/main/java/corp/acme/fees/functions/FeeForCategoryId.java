@@ -16,6 +16,8 @@ public class FeeForCategoryId implements Function<ProductRequest, Double> {
 
     @Override
     public Double apply(ProductRequest productRequest) {
-        return feeService.getFeeForCategoryAndValue(productRequest.getCategoryId(), productRequest.getValue());
+        return feeService.getFeeForCategoryAndValue(
+                productRequest.getClassification().getCategory().getId(),
+                productRequest.getValue());
     }
 }

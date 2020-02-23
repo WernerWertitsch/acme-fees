@@ -17,7 +17,7 @@ public class FeeForCategoryIds implements Function<List<ProductRequest>, List<Do
     @Override
     public List<Double> apply(List<ProductRequest> productRequests) {
         return productRequests.stream().map(r ->
-                feeService.getFeeForCategoryAndValue(r.getCategoryId(), r.getValue())).collect(Collectors.toList());
+                feeService.getFeeForCategoryAndValue(r.getClassification().getCategory().getId(), r.getValue())).collect(Collectors.toList());
     }
 
 }
