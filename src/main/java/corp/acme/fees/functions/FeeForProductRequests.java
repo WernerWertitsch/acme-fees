@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class FeeForCategoryIds implements Function<List<ProductRequest>, List<Double>> {
+public class FeeForProductRequests implements Function<List<ProductRequest>, List<Double>> {
     @Autowired
     FeeService feeService;
 

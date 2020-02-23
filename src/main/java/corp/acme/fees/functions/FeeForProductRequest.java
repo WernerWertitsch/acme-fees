@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class FeeForCategoryId implements Function<ProductRequest, Double> {
+public class FeeForProductRequest implements Function<ProductRequest, Double> {
     @Autowired
     FeeService feeService;
 

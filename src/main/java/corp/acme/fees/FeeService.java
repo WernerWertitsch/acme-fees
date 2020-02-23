@@ -54,25 +54,12 @@ public class FeeService {
 
 
 
-    @PostConstruct
-    private void init() throws IOException {
-        // I know.. :(, but need to wait for discovery and catgoeries, these would be separate micro services
-        try {
-            Thread.sleep(WAIT_BEFORE_INITIALIZING );
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
-        this.importFromFile();
-    }
 
 
     private Category fetchCategory(String name){
         this.discoveryClient.getServices().forEach(s -> logger.info(String.format("Found Service %s", s)));
         URI uri = this.discoveryClient.getInstances("REGULATORY").get(0).getUri();
-        // Hm, do I really have to do this manually?
         WebClient.RequestHeadersSpec call = ServiceCall.buildDefaultCall(uri, "byName", name);
-        //omg, blocking, but this is just at startup
-        logger.info(call.toString());
         return call.retrieve().toEntity(Category.class).block().getBody();
     }
 
@@ -121,6 +108,18 @@ public class FeeService {
         }
         map.put(fee.getCeiling(), fee.getFeePrct());
     }
+
+    @PostConstruct
+    private void init() throws IOException {
+        // I know.. :(, but need to wait for discovery and catgoeries, these would be separate micro services
+        try {
+            Thread.sleep(WAIT_BEFORE_INITIALIZING );
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        this.importFromFile();
+    }
+
 
 }
 
